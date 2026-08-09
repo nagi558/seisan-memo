@@ -11,3 +11,129 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+// --- Auth.js (NextAuth) Prisma Adapter standard models ---
+// https://authjs.dev/getting-started/adapters/prisma
+// Account / Session / VerificationToken の形は Auth.js が要求する形に厳密に合わせる。
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// --- アプリケーション本体のモデル ---
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  accounts   Account[]
+  sessions   Session[]
+  categories Category[]
+  expenses   Expense[]
+
+  // MVPでは1ユーザーにつき1件（Partner.userIdのunique制約で保証）。
+  // 将来、同棲・旅行・家族など複数の相手を扱いたくなった場合は
+  // unique制約を外すだけでUser 1 - N Partnerに拡張できる。
+  partner Partner?
+}
+
+model Partner {
+  id     String @id @default(cuid())
+  userId String @unique
+  name   String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Category {
+  id     String @id @default(cuid())
+  userId String
+  name   String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expenses Expense[]
+
+  // ユーザー内でカテゴリ名の重複を防ぐ
+  @@unique([userId, name])
+}
+
+model Expense {
+  id String @id @default(cuid())
+
+  userId     String
+  categoryId String
+
+  // 立て替えが発生した日付（時刻は扱わない）。createdAt/updatedAtとの命名規則を揃え spentAt とする。
+  spentAt DateTime @db.Date
+
+  // 任意の詳細メモ
+  description String?
+
+  // 金額（円・小数なしの整数）
+  amount Int
+
+  // 自分の負担割合（0-100）。相手の負担割合は 100 - selfSharePercent で導出するため、
+  // 自分・相手の割合を別々のカラムに持たず、矛盾したデータが存在し得ない設計にしている。
+  // 例: 50:50 → selfSharePercent=50 / 70:30 → selfSharePercent=70
+  // 自分の負担額 = amount * selfSharePercent / 100
+  // 相手への請求額 = amount - 自分の負担額
+  // 0-100の範囲（前提）。このPrismaバージョンは @@check / nativeCheckConstraints ともに未対応のため
+  // schema.prisma上でDB制約として表現できない。マイグレーション実行時に
+  // ALTER TABLE ... ADD CONSTRAINT ... CHECK ("selfSharePercent" BETWEEN 0 AND 100) を
+  // カスタムSQLとして追加し、加えてアプリケーション層（入力バリデーション）でも担保する。
+  selfSharePercent Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  // 月単位の集計（ユーザー×期間）とカテゴリ別集計を高速化するためのインデックス
+  @@index([userId, spentAt])
+  @@index([userId, categoryId])
+}
