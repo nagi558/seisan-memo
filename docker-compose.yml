@@ -21,6 +21,8 @@ services:
       context: .
       dockerfile: Dockerfile
     restart: unless-stopped
+    env_file:
+      - .env.local
     environment:
       DATABASE_URL: postgresql://seisan:seisan@db:5432/seisan_memo?schema=public
       NODE_ENV: production
