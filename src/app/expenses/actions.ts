@@ -73,6 +73,8 @@ export async function createExpense(
 
   const { spentAt, categoryName, description, amount, selfSharePercent } = parsed.data;
 
+  let expenseId: string;
+
   try {
     const category = await prisma.category.upsert({
       where: { userId_name: { userId, name: categoryName } },
@@ -80,7 +82,7 @@ export async function createExpense(
       update: {},
     });
 
-    await prisma.expense.create({
+    const expense = await prisma.expense.create({
       data: {
         userId,
         categoryId: category.id,
@@ -90,6 +92,8 @@ export async function createExpense(
         selfSharePercent,
       },
     });
+
+    expenseId = expense.id;
   } catch (error) {
     console.error("Failed to create expense", error);
     return {
@@ -98,5 +102,5 @@ export async function createExpense(
     };
   }
 
-  redirect("/expenses");
+  redirect(`/expenses/${expenseId}/complete`);
 }
