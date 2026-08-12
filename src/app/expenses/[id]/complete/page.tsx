@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { auth } from "@/auth";
+import { getCurrentMonthRange, getMonthlySummary } from "@/lib/dashboard";
 import { splitExpense } from "@/lib/expense";
 import { prisma } from "@/lib/prisma";
 
@@ -41,18 +42,9 @@ export default async function ExpenseCompletePage({
 
   const { selfShare, partnerShare } = splitExpense(expense.amount, expense.selfSharePercent);
 
-  const now = new Date();
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-
-  const monthlyExpenses = await prisma.expense.findMany({
-    where: { userId, spentAt: { gte: startOfMonth, lt: startOfNextMonth } },
-    select: { amount: true, selfSharePercent: true },
-  });
-
-  const monthlyPartnerTotal = monthlyExpenses.reduce(
-    (sum, item) => sum + splitExpense(item.amount, item.selfSharePercent).partnerShare,
-    0,
+  const { partnerTotal: monthlyPartnerTotal } = await getMonthlySummary(
+    userId,
+    getCurrentMonthRange(),
   );
 
   return (
