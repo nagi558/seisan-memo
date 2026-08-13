@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { CategoryIcon } from "@/components/dashboard/category-icon";
 import { Button } from "@/components/ui/button";
-import { formatMonthRangeLabel, getCurrentMonthRange, getMonthlySummary } from "@/lib/dashboard";
+import { formatMonthRangeLabel, getCurrentMonthRange, getPeriodSummary } from "@/lib/dashboard";
 
 export default async function CategoriesPage() {
   const session = await auth();
@@ -16,7 +16,7 @@ export default async function CategoriesPage() {
   }
 
   const range = getCurrentMonthRange();
-  const summary = await getMonthlySummary(userId, range);
+  const summary = await getPeriodSummary(userId, range);
   const periodLabel = formatMonthRangeLabel(range.start, range.end);
 
   return (

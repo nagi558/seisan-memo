@@ -4,7 +4,7 @@ import { notFound, redirect } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { auth } from "@/auth";
-import { getCurrentMonthRange, getMonthlySummary } from "@/lib/dashboard";
+import { getCurrentMonthRange, getPeriodSummary } from "@/lib/dashboard";
 import { splitExpense } from "@/lib/expense";
 import { prisma } from "@/lib/prisma";
 
@@ -42,7 +42,7 @@ export default async function ExpenseCompletePage({
 
   const { selfShare, partnerShare } = splitExpense(expense.amount, expense.selfSharePercent);
 
-  const { partnerTotal: monthlyPartnerTotal } = await getMonthlySummary(
+  const { partnerTotal: monthlyPartnerTotal } = await getPeriodSummary(
     userId,
     getCurrentMonthRange(),
   );

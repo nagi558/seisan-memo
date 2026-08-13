@@ -8,7 +8,7 @@ export type CategorySummary = {
   count: number;
 };
 
-export type MonthlySummary = {
+export type PeriodSummary = {
   start: Date;
   end: Date;
   amountTotal: number;
@@ -18,9 +18,25 @@ export type MonthlySummary = {
   categories: CategorySummary[];
 };
 
+export type CategoryBucket = {
+  key: string;
+  name: string;
+  amountTotal: number;
+};
+
+export function getMonthRange(year: number, month: number): { start: Date; end: Date } {
+  const start = new Date(year, month - 1, 1);
+  const end = new Date(year, month, 1);
+  return { start, end };
+}
+
 export function getCurrentMonthRange(base: Date = new Date()): { start: Date; end: Date } {
-  const start = new Date(base.getFullYear(), base.getMonth(), 1);
-  const end = new Date(base.getFullYear(), base.getMonth() + 1, 1);
+  return getMonthRange(base.getFullYear(), base.getMonth() + 1);
+}
+
+export function getYearRange(year: number): { start: Date; end: Date } {
+  const start = new Date(year, 0, 1);
+  const end = new Date(year + 1, 0, 1);
   return { start, end };
 }
 
@@ -30,10 +46,19 @@ export function formatMonthRangeLabel(start: Date, end: Date) {
   return `${format(start)}〜${format(lastDay)}`;
 }
 
-export async function getMonthlySummary(
+export function formatYearMonthLabel(date: Date) {
+  return `${date.getFullYear()}年${date.getMonth() + 1}月`;
+}
+
+export function formatYearLabel(date: Date) {
+  return `${date.getFullYear()}年`;
+}
+
+// 範囲（月・年どちらでも可）に対する集計。範囲の意味は呼び出し側が決める。
+export async function getPeriodSummary(
   userId: string,
   range: { start: Date; end: Date } = getCurrentMonthRange(),
-): Promise<MonthlySummary> {
+): Promise<PeriodSummary> {
   const expenses = await prisma.expense.findMany({
     where: { userId, spentAt: { gte: range.start, lt: range.end } },
     select: {
@@ -78,4 +103,27 @@ export async function getMonthlySummary(
     expenseCount: expenses.length,
     categories,
   };
+}
+
+const OTHER_CATEGORY_KEY = "__other__";
+
+// 上位N件を個別表示し、残りを「その他」に集約する（ホーム画面・レポート画面で共通）
+export function buildTopCategoriesWithOther(
+  categories: CategorySummary[],
+  topCount = 3,
+): CategoryBucket[] {
+  const top = categories.slice(0, topCount);
+  const rest = categories.slice(topCount);
+  const otherTotal = rest.reduce((sum, category) => sum + category.amountTotal, 0);
+
+  return [
+    ...top.map((category) => ({
+      key: category.categoryId,
+      name: category.name,
+      amountTotal: category.amountTotal,
+    })),
+    ...(rest.length > 0
+      ? [{ key: OTHER_CATEGORY_KEY, name: "その他", amountTotal: otherTotal }]
+      : []),
+  ];
 }
