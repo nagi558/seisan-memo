@@ -1,14 +1,9 @@
 import Link from "next/link";
 
 import { CategoryIcon } from "@/components/dashboard/category-icon";
+import type { CategoryBucket } from "@/lib/dashboard";
 
-export type CategoryBreakdownRow = {
-  key: string;
-  name: string;
-  amountTotal: number;
-};
-
-export function CategoryBreakdown({ rows }: { rows: CategoryBreakdownRow[] }) {
+export function CategoryBreakdown({ rows }: { rows: CategoryBucket[] }) {
   return (
     <section className="flex flex-col gap-3">
       <div className="flex items-center justify-between">

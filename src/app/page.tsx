@@ -3,13 +3,15 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { auth } from "@/auth";
-import { CategoryBreakdown, type CategoryBreakdownRow } from "@/components/dashboard/category-breakdown";
+import { CategoryBreakdown } from "@/components/dashboard/category-breakdown";
 import { SummaryCard } from "@/components/dashboard/summary-card";
 import { Button } from "@/components/ui/button";
-import { formatMonthRangeLabel, getCurrentMonthRange, getMonthlySummary } from "@/lib/dashboard";
-
-const TOP_CATEGORY_COUNT = 3;
-const OTHER_CATEGORY_KEY = "__other__";
+import {
+  buildTopCategoriesWithOther,
+  formatMonthRangeLabel,
+  getCurrentMonthRange,
+  getPeriodSummary,
+} from "@/lib/dashboard";
 
 export default async function Home() {
   const session = await auth();
@@ -20,23 +22,9 @@ export default async function Home() {
   }
 
   const range = getCurrentMonthRange();
-  const summary = await getMonthlySummary(userId, range);
+  const summary = await getPeriodSummary(userId, range);
   const periodLabel = formatMonthRangeLabel(range.start, range.end);
-
-  const topCategories = summary.categories.slice(0, TOP_CATEGORY_COUNT);
-  const restCategories = summary.categories.slice(TOP_CATEGORY_COUNT);
-  const otherTotal = restCategories.reduce((sum, category) => sum + category.amountTotal, 0);
-
-  const breakdownRows: CategoryBreakdownRow[] = [
-    ...topCategories.map((category) => ({
-      key: category.categoryId,
-      name: category.name,
-      amountTotal: category.amountTotal,
-    })),
-    ...(restCategories.length > 0
-      ? [{ key: OTHER_CATEGORY_KEY, name: "その他", amountTotal: otherTotal }]
-      : []),
-  ];
+  const breakdownRows = buildTopCategoriesWithOther(summary.categories);
 
   return (
     <div className="flex flex-1 flex-col">
@@ -45,7 +33,17 @@ export default async function Home() {
       </header>
 
       <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6 px-4 py-6 pb-24">
-        <SummaryCard partnerTotal={summary.partnerTotal} periodLabel={periodLabel} />
+        <SummaryCard
+          label={
+            <>
+              あなたが立て替えた分
+              <br />
+              相手の支払予定額
+            </>
+          }
+          amount={summary.partnerTotal}
+          caption={periodLabel}
+        />
 
         {breakdownRows.length > 0 ? (
           <CategoryBreakdown rows={breakdownRows} />
