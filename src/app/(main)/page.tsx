@@ -12,6 +12,7 @@ import {
   getCurrentMonthRange,
   getPeriodSummary,
 } from "@/lib/dashboard";
+import { getUserSettings, resolvePartnerLabel } from "@/lib/settings";
 
 export default async function Home() {
   const session = await auth();
@@ -21,7 +22,9 @@ export default async function Home() {
     redirect("/login");
   }
 
-  const range = getCurrentMonthRange();
+  const settings = await getUserSettings(userId);
+  const partnerLabel = resolvePartnerLabel(settings.partnerName);
+  const range = getCurrentMonthRange(new Date(), settings.closingDay);
   const summary = await getPeriodSummary(userId, range);
   const periodLabel = formatMonthRangeLabel(range.start, range.end);
   const breakdownRows = buildTopCategoriesWithOther(summary.categories);
@@ -38,7 +41,7 @@ export default async function Home() {
             <>
               あなたが立て替えた分
               <br />
-              相手の支払予定額
+              {partnerLabel}の支払予定額
             </>
           }
           amount={summary.partnerTotal}

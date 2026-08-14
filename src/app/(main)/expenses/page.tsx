@@ -6,6 +6,7 @@ import { auth } from "@/auth";
 import { Button } from "@/components/ui/button";
 import { splitExpense } from "@/lib/expense";
 import { prisma } from "@/lib/prisma";
+import { getUserSettings, resolvePartnerLabel } from "@/lib/settings";
 
 function formatDate(date: Date) {
   return date.toLocaleDateString("ja-JP", {
@@ -23,6 +24,9 @@ export default async function ExpensesPage() {
   if (!userId) {
     redirect("/login");
   }
+
+  const settings = await getUserSettings(userId);
+  const partnerLabel = resolvePartnerLabel(settings.partnerName);
 
   const expenses = await prisma.expense.findMany({
     where: { userId },
@@ -88,7 +92,7 @@ export default async function ExpensesPage() {
                         自分 ¥{selfShare.toLocaleString()}
                       </span>
                       <span className="bg-accent/10 text-accent rounded-full px-2 py-0.5">
-                        相手 ¥{partnerShare.toLocaleString()}
+                        {partnerLabel} ¥{partnerShare.toLocaleString()}
                       </span>
                     </div>
                   </div>

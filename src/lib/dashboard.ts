@@ -24,14 +24,56 @@ export type CategoryBucket = {
   amountTotal: number;
 };
 
-export function getMonthRange(year: number, month: number): { start: Date; end: Date } {
-  const start = new Date(year, month - 1, 1);
-  const end = new Date(year, month, 1);
+// 1〜28日のみ有効な締め日として扱う（29〜31日は月によって存在しないため対象外）。
+// 範囲外・null・undefinedは「毎月末日」を意味するnullに正規化する。
+function normalizeClosingDay(closingDay?: number | null): number | null {
+  if (closingDay == null) return null;
+  return closingDay >= 1 && closingDay <= 28 ? closingDay : null;
+}
+
+// closingDayがnull（毎月末日）の場合は暦月（1日〜末日）。
+// closingDayがD（1〜28）の場合は「前月(D+1)日〜当月D日」を月度の範囲とする。
+// 例: 締め日10日の8月度 → 7月11日〜8月10日
+export function getMonthRange(
+  year: number,
+  month: number,
+  closingDay?: number | null,
+): { start: Date; end: Date } {
+  const day = normalizeClosingDay(closingDay);
+
+  if (day === null) {
+    const start = new Date(year, month - 1, 1);
+    const end = new Date(year, month, 1);
+    return { start, end };
+  }
+
+  const start = new Date(year, month - 2, day + 1);
+  const end = new Date(year, month - 1, day + 1);
   return { start, end };
 }
 
-export function getCurrentMonthRange(base: Date = new Date()): { start: Date; end: Date } {
-  return getMonthRange(base.getFullYear(), base.getMonth() + 1);
+// 締め日を考慮した「現在の月度」(year, month)。closingDayがnullの場合は暦月と一致する。
+// レポート画面の月送りナビゲーション（period-nav.tsx）が「これ以上先に進めない期間」を
+// 判定する際にも、ここでの計算を再利用する。
+export function getCurrentPeriodMonth(
+  base: Date = new Date(),
+  closingDay?: number | null,
+): { year: number; month: number } {
+  const day = normalizeClosingDay(closingDay);
+
+  // 締め日を過ぎていれば、現在の精算期間は「翌月度」に属する。
+  const month = base.getMonth() + 1 + (day !== null && base.getDate() > day ? 1 : 0);
+  // month が13になり得るため、Dateコンストラクタの年またぎ正規化を利用する。
+  const normalized = new Date(base.getFullYear(), month - 1, 1);
+  return { year: normalized.getFullYear(), month: normalized.getMonth() + 1 };
+}
+
+export function getCurrentMonthRange(
+  base: Date = new Date(),
+  closingDay?: number | null,
+): { start: Date; end: Date } {
+  const { year, month } = getCurrentPeriodMonth(base, closingDay);
+  return getMonthRange(year, month, closingDay);
 }
 
 export function getYearRange(year: number): { start: Date; end: Date } {

@@ -3,14 +3,20 @@ import Link from "next/link";
 
 import type { ReportType } from "@/components/dashboard/report-type-tabs";
 
-function isFuturePeriod(type: ReportType, year: number, month: number, today: Date) {
+// 年別は暦年、月別は締め日を考慮した「現在の月度」（currentYear/currentMonth、
+// 呼び出し側でgetCurrentPeriodMonthにより算出）を基準に未来判定を行う。
+function isFuturePeriod(
+  type: ReportType,
+  year: number,
+  month: number,
+  todayYear: number,
+  currentYear: number,
+  currentMonth: number,
+) {
   if (type === "year") {
-    return year > today.getFullYear();
+    return year > todayYear;
   }
-  return (
-    year > today.getFullYear() ||
-    (year === today.getFullYear() && month > today.getMonth() + 1)
-  );
+  return year > currentYear || (year === currentYear && month > currentMonth);
 }
 
 export function PeriodNav({
@@ -18,11 +24,16 @@ export function PeriodNav({
   year,
   month,
   label,
+  currentYear,
+  currentMonth,
 }: {
   type: ReportType;
   year: number;
   month: number;
   label: string;
+  // 締め日を考慮した「現在の月度」。lib/dashboard.tsのgetCurrentPeriodMonthで算出したものを渡す。
+  currentYear: number;
+  currentMonth: number;
 }) {
   const today = new Date();
 
@@ -40,7 +51,14 @@ export function PeriodNav({
         ? { year: year + 1, month: 1 }
         : { year, month: month + 1 };
 
-  const nextDisabled = isFuturePeriod(type, next.year, next.month, today);
+  const nextDisabled = isFuturePeriod(
+    type,
+    next.year,
+    next.month,
+    today.getFullYear(),
+    currentYear,
+    currentMonth,
+  );
 
   const hrefFor = (target: { year: number; month: number }) =>
     type === "year"
