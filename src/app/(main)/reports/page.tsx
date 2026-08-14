@@ -10,6 +10,7 @@ import {
   buildTopCategoriesWithOther,
   formatYearLabel,
   formatYearMonthLabel,
+  getCurrentPeriodMonth,
   getMonthRange,
   getPeriodSummary,
   getYearRange,
@@ -65,6 +66,11 @@ export default async function ReportsPage({
   const periodLabel =
     type === "year" ? formatYearLabel(range.start) : formatYearMonthLabel(new Date(year, month - 1, 1));
 
+  const { year: currentYear, month: currentMonth } = getCurrentPeriodMonth(
+    today,
+    settings.closingDay,
+  );
+
   const summary = await getPeriodSummary(userId, range);
   const buckets = buildTopCategoriesWithOther(summary.categories);
 
@@ -93,7 +99,14 @@ export default async function ReportsPage({
 
       <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6 px-4 py-6">
         <ReportTypeTabs type={type} year={year} month={month} />
-        <PeriodNav type={type} year={year} month={month} label={periodLabel} />
+        <PeriodNav
+          type={type}
+          year={year}
+          month={month}
+          label={periodLabel}
+          currentYear={currentYear}
+          currentMonth={currentMonth}
+        />
 
         <SummaryCard
           label={`${partnerLabel}の支払予定額`}

@@ -52,19 +52,28 @@ export function getMonthRange(
   return { start, end };
 }
 
+// 締め日を考慮した「現在の月度」(year, month)。closingDayがnullの場合は暦月と一致する。
+// レポート画面の月送りナビゲーション（period-nav.tsx）が「これ以上先に進めない期間」を
+// 判定する際にも、ここでの計算を再利用する。
+export function getCurrentPeriodMonth(
+  base: Date = new Date(),
+  closingDay?: number | null,
+): { year: number; month: number } {
+  const day = normalizeClosingDay(closingDay);
+
+  // 締め日を過ぎていれば、現在の精算期間は「翌月度」に属する。
+  const month = base.getMonth() + 1 + (day !== null && base.getDate() > day ? 1 : 0);
+  // month が13になり得るため、Dateコンストラクタの年またぎ正規化を利用する。
+  const normalized = new Date(base.getFullYear(), month - 1, 1);
+  return { year: normalized.getFullYear(), month: normalized.getMonth() + 1 };
+}
+
 export function getCurrentMonthRange(
   base: Date = new Date(),
   closingDay?: number | null,
 ): { start: Date; end: Date } {
-  const day = normalizeClosingDay(closingDay);
-
-  if (day === null) {
-    return getMonthRange(base.getFullYear(), base.getMonth() + 1);
-  }
-
-  // 締め日を過ぎていれば、現在の精算期間は「翌月度」に属する。
-  const month = base.getMonth() + 1 + (base.getDate() > day ? 1 : 0);
-  return getMonthRange(base.getFullYear(), month, day);
+  const { year, month } = getCurrentPeriodMonth(base, closingDay);
+  return getMonthRange(year, month, closingDay);
 }
 
 export function getYearRange(year: number): { start: Date; end: Date } {
