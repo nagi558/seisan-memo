@@ -7,6 +7,7 @@ import { auth } from "@/auth";
 import { getCurrentMonthRange, getPeriodSummary } from "@/lib/dashboard";
 import { splitExpense } from "@/lib/expense";
 import { prisma } from "@/lib/prisma";
+import { getUserSettings, resolvePartnerLabel } from "@/lib/settings";
 
 function formatDate(date: Date) {
   return date.toLocaleDateString("ja-JP", {
@@ -42,9 +43,12 @@ export default async function ExpenseCompletePage({
 
   const { selfShare, partnerShare } = splitExpense(expense.amount, expense.selfSharePercent);
 
+  const settings = await getUserSettings(userId);
+  const partnerLabel = resolvePartnerLabel(settings.partnerName);
+
   const { partnerTotal: monthlyPartnerTotal } = await getPeriodSummary(
     userId,
-    getCurrentMonthRange(),
+    getCurrentMonthRange(new Date(), settings.closingDay),
   );
 
   return (
@@ -83,14 +87,14 @@ export default async function ExpenseCompletePage({
             <p className="text-primary text-xl font-bold">¥{selfShare.toLocaleString()}</p>
           </div>
           <div className="bg-accent/10 flex-1 rounded-xl px-3 py-3 text-center">
-            <p className="text-accent text-xs font-medium">相手の負担額</p>
+            <p className="text-accent text-xs font-medium">{partnerLabel}の負担額</p>
             <p className="text-accent text-xl font-bold">¥{partnerShare.toLocaleString()}</p>
           </div>
         </div>
 
         <div className="from-primary to-primary/80 flex w-full flex-col gap-1 rounded-2xl bg-gradient-to-br p-5 text-center shadow-sm">
           <p className="text-primary-foreground/90 text-sm font-medium">
-            今月の相手の支払予定額
+            今月の{partnerLabel}の支払予定額
           </p>
           <p className="text-primary-foreground text-3xl font-bold">
             ¥{monthlyPartnerTotal.toLocaleString()}

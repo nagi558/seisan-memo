@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
+import { getUserSettings, resolvePartnerLabel } from "@/lib/settings";
 
 import { ExpenseForm } from "./expense-form";
 
@@ -15,6 +16,9 @@ export default async function NewExpensePage() {
   if (!userId) {
     redirect("/login");
   }
+
+  const settings = await getUserSettings(userId);
+  const partnerLabel = resolvePartnerLabel(settings.partnerName);
 
   const categories = await prisma.category.findMany({
     where: { userId },
@@ -37,7 +41,10 @@ export default async function NewExpensePage() {
       </header>
 
       <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-4 px-4 py-6 sm:max-w-lg">
-        <ExpenseForm categoryNames={categories.map((category) => category.name)} />
+        <ExpenseForm
+          categoryNames={categories.map((category) => category.name)}
+          partnerLabel={partnerLabel}
+        />
       </main>
     </div>
   );

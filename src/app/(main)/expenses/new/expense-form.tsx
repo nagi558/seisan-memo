@@ -20,7 +20,13 @@ function todayDateInputValue() {
   return `${yyyy}-${mm}-${dd}`;
 }
 
-export function ExpenseForm({ categoryNames }: { categoryNames: string[] }) {
+export function ExpenseForm({
+  categoryNames,
+  partnerLabel,
+}: {
+  categoryNames: string[];
+  partnerLabel: string;
+}) {
   const [state, formAction, pending] = useActionState(createExpense, initialExpenseFormState);
   const [amount, setAmount] = useState(state.values?.amount ?? "");
   const [selfSharePercent, setSelfSharePercent] = useState(state.values?.selfSharePercent ?? "50");
@@ -163,7 +169,7 @@ export function ExpenseForm({ categoryNames }: { categoryNames: string[] }) {
           </div>
           <span className="text-muted-foreground font-medium">:</span>
           <div className="bg-accent/10 flex-1 rounded-xl px-3 py-2.5 text-center">
-            <p className="text-accent text-xs font-medium">相手</p>
+            <p className="text-accent text-xs font-medium">{partnerLabel}</p>
             <p className="text-accent text-lg font-bold">{partnerPercentDisplay}%</p>
           </div>
         </div>
@@ -184,7 +190,7 @@ export function ExpenseForm({ categoryNames }: { categoryNames: string[] }) {
               </p>
             </div>
             <div className="bg-accent/10 flex-1 rounded-xl px-3 py-3 text-center">
-              <p className="text-accent text-xs font-medium">相手の負担額</p>
+              <p className="text-accent text-xs font-medium">{partnerLabel}の負担額</p>
               <p className="text-accent text-xl font-bold">
                 ¥{preview.partnerShare.toLocaleString()}
               </p>

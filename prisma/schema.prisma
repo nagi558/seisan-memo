@@ -61,6 +61,12 @@ model User {
   emailVerified DateTime?
   image         String?
 
+  // 締め日（1〜31）。nullは「毎月末日」を意味する。
+  // 29〜31日は月によって存在しないため、選択肢はアプリ層で1〜28日+月末に限定する。
+  // 0-100の範囲チェックと同様の理由でPrisma Schema単体ではCHECK制約を表現できないため、
+  // マイグレーション側でカスタムSQLとして範囲制約を追加する。
+  closingDay Int?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

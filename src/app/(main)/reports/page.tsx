@@ -14,6 +14,7 @@ import {
   getPeriodSummary,
   getYearRange,
 } from "@/lib/dashboard";
+import { getUserSettings, resolvePartnerLabel } from "@/lib/settings";
 
 const SEGMENT_COLORS = ["var(--chart-1)", "var(--chart-2)", "var(--chart-3)", "var(--chart-4)"];
 
@@ -41,6 +42,9 @@ export default async function ReportsPage({
     redirect("/login");
   }
 
+  const settings = await getUserSettings(userId);
+  const partnerLabel = resolvePartnerLabel(settings.partnerName);
+
   const sp = await searchParams;
   const today = new Date();
   const type = parseReportType(sp.type);
@@ -54,9 +58,12 @@ export default async function ReportsPage({
       ? monthParam
       : today.getMonth() + 1;
 
-  const range = type === "year" ? getYearRange(year) : getMonthRange(year, month);
+  // 年別集計には締め日を適用せず暦年のまま扱う。
+  const range =
+    type === "year" ? getYearRange(year) : getMonthRange(year, month, settings.closingDay);
+  // 締め日ありの場合 range.start は前月にずれるため、ラベルは選択中のyear/monthから直接組み立てる。
   const periodLabel =
-    type === "year" ? formatYearLabel(range.start) : formatYearMonthLabel(range.start);
+    type === "year" ? formatYearLabel(range.start) : formatYearMonthLabel(new Date(year, month - 1, 1));
 
   const summary = await getPeriodSummary(userId, range);
   const buckets = buildTopCategoriesWithOther(summary.categories);
@@ -89,7 +96,7 @@ export default async function ReportsPage({
         <PeriodNav type={type} year={year} month={month} label={periodLabel} />
 
         <SummaryCard
-          label="相手の支払予定額"
+          label={`${partnerLabel}の支払予定額`}
           amount={summary.partnerTotal}
           caption={`（あなたの立て替え合計 ¥${summary.amountTotal.toLocaleString()}）`}
         />
