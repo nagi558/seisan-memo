@@ -32,7 +32,7 @@ export default async function Home() {
         <h1 className="text-foreground text-lg font-semibold">今月の精算</h1>
       </header>
 
-      <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6 px-4 py-6 pb-24">
+      <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6 px-4 py-6">
         <SummaryCard
           label={
             <>

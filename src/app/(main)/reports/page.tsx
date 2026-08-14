@@ -84,7 +84,7 @@ export default async function ReportsPage({
         <h1 className="text-foreground text-lg font-semibold">レポート</h1>
       </header>
 
-      <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6 px-4 py-6 pb-24">
+      <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6 px-4 py-6">
         <ReportTypeTabs type={type} year={year} month={month} />
         <PeriodNav type={type} year={year} month={month} label={periodLabel} />
 
