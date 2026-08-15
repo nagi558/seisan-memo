@@ -8,9 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { splitExpense } from "@/lib/expense";
 
-import { createExpense, type ExpenseFormState } from "../actions";
+import type { ExpenseFormState } from "../actions";
 
-const initialExpenseFormState: ExpenseFormState = {};
+const emptyExpenseFormState: ExpenseFormState = {};
 
 function todayDateInputValue() {
   const now = new Date();
@@ -23,11 +23,21 @@ function todayDateInputValue() {
 export function ExpenseForm({
   categoryNames,
   partnerLabel,
+  action,
+  initialState = emptyExpenseFormState,
+  submitLabel = "登録する",
+  pendingLabel = "登録中...",
+  hiddenFields,
 }: {
   categoryNames: string[];
   partnerLabel: string;
+  action: (state: ExpenseFormState, formData: FormData) => Promise<ExpenseFormState>;
+  initialState?: ExpenseFormState;
+  submitLabel?: string;
+  pendingLabel?: string;
+  hiddenFields?: Record<string, string>;
 }) {
-  const [state, formAction, pending] = useActionState(createExpense, initialExpenseFormState);
+  const [state, formAction, pending] = useActionState(action, initialState);
   const [amount, setAmount] = useState(state.values?.amount ?? "");
   const [selfSharePercent, setSelfSharePercent] = useState(state.values?.selfSharePercent ?? "50");
 
@@ -48,6 +58,12 @@ export function ExpenseForm({
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
+      {hiddenFields
+        ? Object.entries(hiddenFields).map(([name, value]) => (
+            <input key={name} type="hidden" name={name} value={value} />
+          ))
+        : null}
+
       {state.errors?._form ? (
         <p className="text-destructive text-sm">{state.errors._form[0]}</p>
       ) : null}
@@ -204,7 +220,7 @@ export function ExpenseForm({
       </div>
 
       <Button type="submit" disabled={pending} className="h-11 w-full rounded-xl text-base">
-        {pending ? "登録中..." : "登録する"}
+        {pending ? pendingLabel : submitLabel}
       </Button>
     </form>
   );
