@@ -6,19 +6,24 @@ import { CalendarDays, User, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
-import { updateSettings, type SettingsFormState } from "./actions";
+import type { SettingsFormState } from "@/lib/settings";
 
 const CLOSING_DAY_OPTIONS = Array.from({ length: 28 }, (_, i) => i + 1);
 
-export function SettingsForm({
+export function UserSettingsForm({
   name,
   partnerName,
   closingDay,
+  action,
+  submitLabel = "保存する",
+  pendingLabel = "保存中...",
 }: {
   name: string;
   partnerName: string;
   closingDay: number | null;
+  action: (state: SettingsFormState, formData: FormData) => Promise<SettingsFormState>;
+  submitLabel?: string;
+  pendingLabel?: string;
 }) {
   const initialState: SettingsFormState = {
     values: {
@@ -27,7 +32,7 @@ export function SettingsForm({
       closingDay: closingDay ? String(closingDay) : "",
     },
   };
-  const [state, formAction, pending] = useActionState(updateSettings, initialState);
+  const [state, formAction, pending] = useActionState(action, initialState);
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
@@ -99,7 +104,7 @@ export function SettingsForm({
       </div>
 
       <Button type="submit" disabled={pending} className="h-11 w-full rounded-xl text-base">
-        {pending ? "保存中..." : "保存する"}
+        {pending ? pendingLabel : submitLabel}
       </Button>
     </form>
   );

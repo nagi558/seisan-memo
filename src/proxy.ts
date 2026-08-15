@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 
 const PUBLIC_ROUTES = ["/login"];
+const SETUP_ROUTE = "/setup";
 
 export default auth((req) => {
   const { pathname } = req.nextUrl;
@@ -14,6 +15,20 @@ export default auth((req) => {
 
   if (req.auth && isPublicRoute) {
     return NextResponse.redirect(new URL("/", req.nextUrl));
+  }
+
+  if (req.auth) {
+    // database session戦略では、adapterが返すUserレコード全体が
+    // session.userにマージされるため、追加のDBクエリなしで参照できる。
+    const isOnboardingComplete = Boolean(req.auth.user?.onboardingCompletedAt);
+
+    if (!isOnboardingComplete && pathname !== SETUP_ROUTE) {
+      return NextResponse.redirect(new URL(SETUP_ROUTE, req.nextUrl));
+    }
+
+    if (isOnboardingComplete && pathname === SETUP_ROUTE) {
+      return NextResponse.redirect(new URL("/", req.nextUrl));
+    }
   }
 });
 

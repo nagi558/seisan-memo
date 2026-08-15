@@ -1,10 +1,10 @@
 import { redirect } from "next/navigation";
 
 import { auth } from "@/auth";
+import { UserSettingsForm } from "@/components/settings/user-settings-form";
 import { getUserSettings } from "@/lib/settings";
 
-import { logout } from "./actions";
-import { SettingsForm } from "./settings-form";
+import { logout, updateSettings } from "./actions";
 
 export default async function SettingsPage() {
   const session = await auth();
@@ -23,10 +23,11 @@ export default async function SettingsPage() {
       </header>
 
       <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6 px-4 py-6">
-        <SettingsForm
+        <UserSettingsForm
           name={settings.name ?? ""}
           partnerName={settings.partnerName ?? ""}
           closingDay={settings.closingDay}
+          action={updateSettings}
         />
 
         <form action={logout}>
