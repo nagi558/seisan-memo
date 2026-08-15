@@ -1,6 +1,8 @@
 "use server";
 
-import { auth, signOut } from "@/auth";
+import { redirect } from "next/navigation";
+
+import { auth } from "@/auth";
 import {
   applyUserSettings,
   settingsSchema,
@@ -8,7 +10,7 @@ import {
   type SettingsFormValues,
 } from "@/lib/settings";
 
-export async function updateSettings(
+export async function completeOnboarding(
   _prevState: SettingsFormState,
   formData: FormData,
 ): Promise<SettingsFormState> {
@@ -30,18 +32,14 @@ export async function updateSettings(
   }
 
   try {
-    await applyUserSettings(userId, parsed.data);
+    await applyUserSettings(userId, parsed.data, { onboardingCompletedAt: new Date() });
   } catch (error) {
-    console.error("Failed to update settings", error);
+    console.error("Failed to complete onboarding", error);
     return {
       errors: { _form: ["保存に失敗しました。時間をおいて再度お試しください。"] },
       values,
     };
   }
 
-  return { values, success: true };
-}
-
-export async function logout() {
-  await signOut({ redirectTo: "/login" });
+  redirect("/");
 }

@@ -67,6 +67,13 @@ model User {
   // マイグレーション側でカスタムSQLとして範囲制約を追加する。
   closingDay Int?
 
+  // 初期設定（オンボーディング）完了日時。nullは未完了を意味する。
+  // User.nameはGoogleログイン時にプロフィール名で自動設定されるため、
+  // name等の既存フィールドの有無だけでは初期設定済みかどうかを判定できない。
+  // マイグレーション適用時、既存ユーザーはcreatedAtでbackfillし、
+  // 本機能が存在する前から使っているユーザーが/setupへ送られないようにする。
+  onboardingCompletedAt DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
