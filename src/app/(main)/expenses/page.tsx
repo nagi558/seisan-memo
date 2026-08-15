@@ -1,4 +1,4 @@
-import { Plus, Receipt } from "lucide-react";
+import { Pencil, Plus, Receipt } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { splitExpense } from "@/lib/expense";
 import { prisma } from "@/lib/prisma";
 import { getUserSettings, resolvePartnerLabel } from "@/lib/settings";
+
+import { DeleteExpenseButton } from "./delete-expense-button";
 
 function formatDate(date: Date) {
   return date.toLocaleDateString("ja-JP", {
@@ -76,9 +78,20 @@ export default async function ExpensesPage() {
                     <span className="text-muted-foreground text-sm">
                       {formatDate(expense.spentAt)}
                     </span>
-                    <span className="bg-secondary text-secondary-foreground rounded-full px-2.5 py-0.5 text-xs font-medium">
-                      {expense.category.name}
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="bg-secondary text-secondary-foreground rounded-full px-2.5 py-0.5 text-xs font-medium">
+                        {expense.category.name}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label="編集"
+                        render={<Link href={`/expenses/${expense.id}/edit`} />}
+                      >
+                        <Pencil className="size-4" />
+                      </Button>
+                      <DeleteExpenseButton expenseId={expense.id} />
+                    </div>
                   </div>
                   {expense.description ? (
                     <p className="text-foreground font-medium">{expense.description}</p>

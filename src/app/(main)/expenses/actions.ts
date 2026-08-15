@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { auth } from "@/auth";
@@ -103,4 +104,84 @@ export async function createExpense(
   }
 
   redirect(`/expenses/${expenseId}/complete`);
+}
+
+export async function updateExpense(
+  _prevState: ExpenseFormState,
+  formData: FormData,
+): Promise<ExpenseFormState> {
+  const id = String(formData.get("id") ?? "");
+
+  const values: ExpenseFormValues = {
+    spentAt: String(formData.get("spentAt") ?? ""),
+    categoryName: String(formData.get("categoryName") ?? ""),
+    description: String(formData.get("description") ?? ""),
+    amount: String(formData.get("amount") ?? ""),
+    selfSharePercent: String(formData.get("selfSharePercent") ?? ""),
+  };
+
+  const parsed = expenseSchema.safeParse(values);
+  if (!parsed.success) {
+    return { errors: parsed.error.flatten().fieldErrors, values };
+  }
+
+  const session = await auth();
+  const userId = session?.user?.id;
+  if (!userId) {
+    return { errors: { _form: ["ログインが必要です"] }, values };
+  }
+
+  if (!id) {
+    return { errors: { _form: ["不正なリクエストです"] }, values };
+  }
+
+  const { spentAt, categoryName, description, amount, selfSharePercent } = parsed.data;
+
+  try {
+    const category = await prisma.category.upsert({
+      where: { userId_name: { userId, name: categoryName } },
+      create: { userId, name: categoryName },
+      update: {},
+    });
+
+    // userIdもwhereに含めることで、他ユーザーの支出を更新できないようにする。
+    const result = await prisma.expense.updateMany({
+      where: { id, userId },
+      data: {
+        categoryId: category.id,
+        spentAt: new Date(spentAt),
+        description: description.length > 0 ? description : null,
+        amount,
+        selfSharePercent,
+      },
+    });
+
+    if (result.count === 0) {
+      return { errors: { _form: ["対象の支出が見つかりませんでした"] }, values };
+    }
+  } catch (error) {
+    console.error("Failed to update expense", error);
+    return {
+      errors: { _form: ["更新に失敗しました。時間をおいて再度お試しください。"] },
+      values,
+    };
+  }
+
+  redirect("/expenses");
+}
+
+export async function deleteExpense(formData: FormData): Promise<void> {
+  const id = String(formData.get("id") ?? "");
+
+  const session = await auth();
+  const userId = session?.user?.id;
+  if (!userId || !id) {
+    return;
+  }
+
+  // userIdもwhereに含めることで、他ユーザーの支出を削除できないようにする。
+  await prisma.expense.deleteMany({ where: { id, userId } });
+
+  // useActionStateを使わない素のform actionのため、削除後に一覧を明示的に再検証する。
+  revalidatePath("/expenses");
 }

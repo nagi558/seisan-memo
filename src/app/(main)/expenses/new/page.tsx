@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
 import { getUserSettings, resolvePartnerLabel } from "@/lib/settings";
 
+import { createExpense } from "../actions";
 import { ExpenseForm } from "./expense-form";
 
 export default async function NewExpensePage() {
@@ -44,6 +45,7 @@ export default async function NewExpensePage() {
         <ExpenseForm
           categoryNames={categories.map((category) => category.name)}
           partnerLabel={partnerLabel}
+          action={createExpense}
         />
       </main>
     </div>
