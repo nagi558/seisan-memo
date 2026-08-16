@@ -46,6 +46,7 @@ export default async function NewExpensePage() {
           categoryNames={categories.map((category) => category.name)}
           partnerLabel={partnerLabel}
           action={createExpense}
+          confirmStep
         />
       </main>
     </div>
