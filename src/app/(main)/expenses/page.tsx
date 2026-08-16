@@ -8,6 +8,7 @@ import { splitExpense } from "@/lib/expense";
 import { prisma } from "@/lib/prisma";
 import { getUserSettings, resolvePartnerLabel } from "@/lib/settings";
 
+import { CategoryFilterTabs } from "./category-filter-tabs";
 import { DeleteExpenseButton } from "./delete-expense-button";
 
 function formatDate(date: Date) {
@@ -19,7 +20,11 @@ function formatDate(date: Date) {
   });
 }
 
-export default async function ExpensesPage() {
+export default async function ExpensesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ category?: string }>;
+}) {
   const session = await auth();
   const userId = session?.user?.id;
 
@@ -30,8 +35,22 @@ export default async function ExpensesPage() {
   const settings = await getUserSettings(userId);
   const partnerLabel = resolvePartnerLabel(settings.partnerName);
 
-  const expenses = await prisma.expense.findMany({
+  const categories = await prisma.category.findMany({
     where: { userId },
+    orderBy: { name: "asc" },
+    select: { id: true, name: true },
+  });
+
+  const sp = await searchParams;
+  // 不正なcategoryId・他ユーザーのcategoryId・未指定はすべて「すべて」（絞り込みなし）として扱う。
+  const selectedCategoryId =
+    categories.find((category) => category.id === sp.category)?.id ?? null;
+
+  const expenses = await prisma.expense.findMany({
+    where: {
+      userId,
+      ...(selectedCategoryId ? { categoryId: selectedCategoryId } : {}),
+    },
     include: { category: true },
     orderBy: [{ spentAt: "desc" }, { createdAt: "desc" }],
   });
@@ -50,10 +69,16 @@ export default async function ExpensesPage() {
       </header>
 
       <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-3 px-4 py-6 sm:px-6">
+        <CategoryFilterTabs categories={categories} selectedCategoryId={selectedCategoryId} />
+
         {expenses.length === 0 ? (
           <div className="border-border bg-card flex flex-1 flex-col items-center justify-center gap-3 rounded-2xl border p-10 text-center">
             <Receipt className="text-muted-foreground size-10" />
-            <p className="text-muted-foreground">まだ支出が登録されていません。</p>
+            <p className="text-muted-foreground">
+              {selectedCategoryId
+                ? "このカテゴリの支出はまだ登録されていません。"
+                : "まだ支出が登録されていません。"}
+            </p>
             <Button
               render={<Link href="/expenses/new" />}
               className="bg-accent text-accent-foreground hover:bg-accent/90 mt-2 rounded-full"
