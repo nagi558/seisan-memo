@@ -77,7 +77,7 @@ export default function PrivacyPage() {
           <section className="flex flex-col gap-2">
             <h2 className="text-foreground text-base font-semibold">6. データの管理</h2>
             <p className="text-foreground text-sm leading-relaxed">
-              取得した情報は、適切な安全管理措置のもとデータベースで管理します。ユーザーがアカウントの削除を希望する場合は、下記のお問い合わせ先までご連絡ください。
+              取得した情報は、適切な安全管理措置のもとデータベースで管理します。ユーザーは設定画面からいつでも自身でアカウントを削除でき、削除すると支出・カテゴリ・相手の呼び名などの関連データも含めて完全に削除されます。この削除操作は元に戻すことができません。なお、アカウント削除はGoogle連携情報を含む本サービス内のデータの削除であり、Googleアカウント自体が削除されるものではありません。セルフサービスでの削除が難しい場合は、下記のお問い合わせ先までご連絡ください。
             </p>
           </section>
 

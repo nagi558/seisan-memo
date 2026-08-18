@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { auth } from "@/auth";
+import { DeleteAccountDialog } from "@/components/settings/delete-account-dialog";
 import { UserSettingsForm } from "@/components/settings/user-settings-form";
 import { getUserSettings } from "@/lib/settings";
 
@@ -38,6 +39,16 @@ export default async function SettingsPage() {
             ログアウト
           </button>
         </form>
+
+        <div className="bg-border h-px" />
+
+        <div className="flex flex-col gap-2">
+          <h2 className="text-foreground text-sm font-semibold">アカウント削除</h2>
+          <p className="text-muted-foreground text-xs leading-relaxed">
+            アカウントと支出・カテゴリなどの関連データを完全に削除します。元に戻すことはできません。
+          </p>
+          <DeleteAccountDialog />
+        </div>
       </main>
     </div>
   );
