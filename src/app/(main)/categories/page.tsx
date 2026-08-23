@@ -3,10 +3,10 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { auth } from "@/auth";
-import { CategoryIcon } from "@/components/dashboard/category-icon";
 import { Button } from "@/components/ui/button";
-import { formatMonthRangeLabel, getCurrentMonthRange, getPeriodSummary } from "@/lib/dashboard";
-import { getUserSettings } from "@/lib/settings";
+import { prisma } from "@/lib/prisma";
+
+import { CategoryListItem } from "./category-list-item";
 
 export default async function CategoriesPage() {
   const session = await auth();
@@ -16,10 +16,15 @@ export default async function CategoriesPage() {
     redirect("/login");
   }
 
-  const settings = await getUserSettings(userId);
-  const range = getCurrentMonthRange(new Date(), settings.closingDay);
-  const summary = await getPeriodSummary(userId, range);
-  const periodLabel = formatMonthRangeLabel(range.start, range.end);
+  const categories = await prisma.category.findMany({
+    where: { userId },
+    orderBy: { name: "asc" },
+    select: {
+      id: true,
+      name: true,
+      _count: { select: { expenses: true } },
+    },
+  });
 
   return (
     <div className="flex flex-1 flex-col">
@@ -27,58 +32,26 @@ export default async function CategoriesPage() {
         <Button variant="ghost" size="icon" aria-label="ホームに戻る" render={<Link href="/" />}>
           <ArrowLeft />
         </Button>
-        <h1 className="text-foreground text-lg font-semibold">カテゴリ一覧</h1>
+        <h1 className="text-foreground text-lg font-semibold">カテゴリ管理</h1>
       </header>
 
       <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-4 px-4 py-6">
-        <p className="text-muted-foreground text-sm">{periodLabel}</p>
-
-        {summary.categories.length === 0 ? (
+        {categories.length === 0 ? (
           <div className="border-border bg-card flex flex-col items-center gap-2 rounded-2xl border p-8 text-center">
-            <p className="text-muted-foreground text-sm">今月の支出はまだ登録されていません。</p>
+            <p className="text-muted-foreground text-sm">まだカテゴリが登録されていません。</p>
           </div>
         ) : (
           <ul className="border-border bg-card divide-border divide-y rounded-2xl border shadow-sm">
-            {summary.categories.map((category) => {
-              const percent =
-                summary.amountTotal > 0
-                  ? Math.round((category.amountTotal / summary.amountTotal) * 100)
-                  : 0;
-
-              return (
-                <li
-                  key={category.categoryId}
-                  className="flex items-center justify-between gap-3 px-4 py-3"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="bg-secondary text-secondary-foreground flex size-9 shrink-0 items-center justify-center rounded-full">
-                      <CategoryIcon name={category.name} className="size-4" />
-                    </span>
-                    <div className="flex flex-col">
-                      <span className="text-foreground text-sm font-medium">{category.name}</span>
-                      <span className="text-muted-foreground text-xs">{category.count}件</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-foreground text-sm font-semibold">
-                      ¥{category.amountTotal.toLocaleString()}
-                    </span>
-                    <span className="text-muted-foreground w-10 text-right text-xs">
-                      {percent}%
-                    </span>
-                  </div>
-                </li>
-              );
-            })}
+            {categories.map((category) => (
+              <CategoryListItem
+                key={category.id}
+                id={category.id}
+                name={category.name}
+                expenseCount={category._count.expenses}
+              />
+            ))}
           </ul>
         )}
-
-        <div className="flex items-center justify-between px-1">
-          <span className="text-foreground text-sm font-semibold">合計</span>
-          <span className="text-foreground text-sm font-semibold">
-            ¥{summary.amountTotal.toLocaleString()}（{summary.expenseCount}件）
-          </span>
-        </div>
       </main>
     </div>
   );

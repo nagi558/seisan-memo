@@ -9,7 +9,7 @@ export function CategoryBreakdown({ rows }: { rows: CategoryBucket[] }) {
       <div className="flex items-center justify-between">
         <h2 className="text-foreground text-base font-semibold">カテゴリ別の内訳</h2>
         <Link href="/categories" className="text-primary text-sm font-medium hover:underline">
-          すべてみる
+          管理
         </Link>
       </div>
       <ul className="border-border bg-card divide-border divide-y rounded-2xl border shadow-sm">
