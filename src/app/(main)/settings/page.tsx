@@ -1,8 +1,10 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { auth } from "@/auth";
 import { DeleteAccountDialog } from "@/components/settings/delete-account-dialog";
 import { UserSettingsForm } from "@/components/settings/user-settings-form";
+import { Button } from "@/components/ui/button";
 import { getUserSettings } from "@/lib/settings";
 
 import { logout, updateSettings } from "./actions";
@@ -30,6 +32,14 @@ export default async function SettingsPage() {
           closingDay={settings.closingDay}
           action={updateSettings}
         />
+
+        <Button
+          variant="outline"
+          className="h-11 w-full rounded-xl text-base"
+          render={<Link href="/categories" />}
+        >
+          カテゴリ管理
+        </Button>
 
         <form action={logout}>
           <button
